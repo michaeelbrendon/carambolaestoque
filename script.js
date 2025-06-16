@@ -23,6 +23,8 @@ const firebaseConfig = {
     messagingSenderId: "381269040819",
     appId: "1:381269040819:web:86b389b25a70b7f8329ac6",
     measurementId: "G-WBETYR66TP"
+    allow read, write: if request.auth != null;
+
 };
 service cloud.firestore {
   match /databases/{database}/documents {
