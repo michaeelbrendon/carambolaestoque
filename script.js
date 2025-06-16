@@ -35,6 +35,17 @@ service cloud.firestore {
   }
 }
 
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
+
+
 function mostrarMensagem(texto) {
     mensagemSucesso.textContent = texto;
     mensagemSucesso.classList.remove("hidden");
