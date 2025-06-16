@@ -24,6 +24,14 @@ const firebaseConfig = {
     appId: "1:381269040819:web:86b389b25a70b7f8329ac6",
     measurementId: "G-WBETYR66TP"
 };
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /produtos/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
 
 function mostrarMensagem(texto) {
     mensagemSucesso.textContent = texto;
