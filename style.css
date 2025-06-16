@@ -1,0 +1,45 @@
+/* style.css */
+
+bobody {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h1 {
+    color: #f59e0b;
+}
+
+.tab-btn {
+    transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+    background-color: #facc15;
+    color: #1f2937;
+}
+
+input,
+button,
+select {
+    transition: all 0.2s ease;
+}
+
+input:focus,
+button:focus {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+}
+
+table th {
+    background-color: #fcd34d;
+}
+
+table tr:nth-child(even) {
+    background-color: #fff7ed;
+}
+
+table tr:hover {
+    background-color: #fef3c7;
+}

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estoque Carambola</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="relative bg-cover bg-center min-h-screen font-sans" style="background-image: url('fundo.jpeg');"></body>
+<div class="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
+
+<div class="relative z-10 p-6">
+    <div class="max-w-6xl mx-auto bg-white shadow-md p-6 rounded-xl border border-orange-200">
+        <div class="flex items-center gap-4 mb-6">
+            <img src="carambola.png" alt="Logo" class="w-14 h-14 object-contain rounded" />
+            <h1 class="text-3xl font-bold text-orange-600">Sistema de Estoque Carambola</h1>
+        </div>
+
+        <div class="flex gap-4 mb-6">
+            <button id="abaCadastroBtn"
+                class="tab-btn bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">Cadastrar</button>
+            <button id="abaVisualizarBtn"
+                class="tab-btn bg-yellow-100 text-orange-700 px-4 py-2 rounded hover:bg-yellow-200">Visualizar</button>
+            <button id="abaGraficoBtn"
+                class="tab-btn bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">Gráfico</button>
+            <button id="exportarBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Exportar
+                Excel</button>
+        </div>
+
+        <div id="mensagemSucesso" class="hidden fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow">
+        </div>
+
+        <div id="abaCadastro" class="tab-content">
+            <form id="formProduto" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <input id="nome" type="text" placeholder="Nome do produto" class="p-2 border border-orange-300 rounded"
+                    required />
+                <input id="cor" type="text" placeholder="Cor do produto" class="p-2 border border-orange-300 rounded"
+                    required />
+                <input id="quantidade" type="number" placeholder="Quantidade"
+                    class="p-2 border border-orange-300 rounded" required />
+                <input id="embalagem" type="number" placeholder="Preço da Embalagem" step="0.01"
+                    class="p-2 border border-orange-300 rounded" required />
+                <input id="valorpdv" type="number" placeholder="Valor Ponto de Venda" step="0.01"
+                    class="p-2 border border-orange-300 rounded" required />
+                <input id="investimento" type="number" placeholder="Valor Investido" step="0.01"
+                    class="p-2 border border-orange-300 rounded" required />
+                <input id="montante" type="number" placeholder="Montante" step="0.01"
+                    class="p-2 border border-orange-300 rounded" required />
+                <div class="col-span-1 md:col-span-4 flex gap-2">
+                    <button type="submit" class="bg-orange-500 text-white p-2 rounded hover:bg-orange-600">Salvar
+                        Produto</button>
+                    <button type="button" id="cancelarEdicaoBtn"
+                        class="hidden bg-gray-400 text-white p-2 rounded hover:bg-gray-500">Cancelar Edição</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="abaVisualizar" class="tab-content hidden">
+            <input type="text" id="filtroBusca" placeholder="Buscar produto por nome"
+                class="mb-4 p-2 border border-orange-300 rounded w-full" />
+            <div class="overflow-auto rounded">
+                <table class="w-full text-left border border-orange-300">
+                    <thead>
+                        <tr class="bg-orange-100">
+                            <th class="p-2 border border-orange-200 cursor-pointer" data-col="nome">Nome</th>
+                            <th class="p-2 border border-orange-200 cursor-pointer" data-col="cor">Cor</th>
+                            <th class="p-2 border border-orange-200 cursor-pointer" data-col="quantidade">Quantidade
+                            </th>
+                            <th class="p-2 border border-orange-200 cursor-pointer" data-col="embalagem">Embalagem
+                                (R$)</th>
+                            <th class="p-2 border border-orange-200 cursor-pointer" data-col="valorpdv">Valorpdv
+                                (R$)</th>
+                            <th class="p-2 border border-orange-200 cursor-pointer" data-col="investimento">
+                                Investimento (R$)</th>
+                            <th class="p-2 border border-orange-200 cursor-pointer" data-col="montante">Montante
+                                (R$)</th>
+                            <th class="p-2 border border-orange-200">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaProdutos"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="abaGrafico" class="tab-content hidden">
+            <canvas id="graficoLucro" class="w-full max-w-4xl mx-auto h-96"></canvas>
+        </div>
+
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+        apiKey: "AIzaSyDtKKeamDkDcT_0bGp79PNnZ1k_ThaCyhk",
+        authDomain: "estoquecarambola2.firebaseapp.com",
+        projectId: "estoquecarambola2",
+        storageBucket: "estoquecarambola2.firebasestorage.app",
+        messagingSenderId: "381269040819",
+        appId: "1:381269040819:web:86b389b25a70b7f8329ac6",
+        measurementId: "G-WBETYR66TP"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+</script>
+
+</html>
