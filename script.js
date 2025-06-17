@@ -1,85 +1,207 @@
 // script.js
 
-let produtos = [];
-let editandoIndex = -1;
-let ordemAtual = { coluna: null, crescente: true };
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    doc,
+    deleteDoc,
+    updateDoc,
+    onSnapshot,
+    query,
+    orderBy,
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-const formProduto = document.getElementById('formProduto');
-const tabelaProdutos = document.getElementById('tabelaProdutos');
-const filtroBusca = document.getElementById('filtroBusca');
-const mensagemSucesso = document.getElementById('mensagemSucesso');
-const cancelarEdicaoBtn = document.getElementById('cancelarEdicaoBtn');
-
-const abas = {
-    cadastro: document.getElementById('abaCadastro'),
-    visualizar: document.getElementById('abaVisualizar'),
-    grafico: document.getElementById('abaGrafico'),
+// Configuração Firebase - substitua pelos seus dados reais do Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyDtKKeamDkDcT_0bGp79PNnZ1k_ThaCyhk",
+    authDomain: "estoquecarambola2.firebaseapp.com",
+    projectId: "estoquecarambola2",
+    storageBucket: "estoquecarambola2.firebasestorage.app",
+    messagingSenderId: "381269040819",
+    appId: "1:381269040819:web:86b389b25a70b7f8329ac6",
+    measurementId: "G-WBETYR66TP"
 };
 
-const btnCadastro = document.getElementById('abaCadastroBtn');
-const btnVisualizar = document.getElementById('abaVisualizarBtn');
-const btnGrafico = document.getElementById('abaGraficoBtn');
-const btnExportar = document.getElementById('exportarBtn');
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-const campos = ['nome', 'cor', 'quantidade', 'embalagem', 'valorpdv', 'investimento', 'montante'];
+const formProduto = document.getElementById("formProduto");
+const tabelaProdutos = document.getElementById("tabelaProdutos");
+const filtroBusca = document.getElementById("filtroBusca");
+const mensagemSucesso = document.getElementById("mensagemSucesso");
+const cancelarEdicaoBtn = document.getElementById("cancelarEdicaoBtn");
+
+const abas = {
+    cadastro: document.getElementById("abaCadastro"),
+    visualizar: document.getElementById("abaVisualizar"),
+    grafico: document.getElementById("abaGrafico"),
+};
+
+const btnCadastro = document.getElementById("abaCadastroBtn");
+const btnVisualizar = document.getElementById("abaVisualizarBtn");
+const btnGrafico = document.getElementById("abaGraficoBtn");
+const btnExportar = document.getElementById("exportarBtn");
+
+const campos = [
+    "nome",
+    "cor",
+    "quantidade",
+    "embalagem",
+    "valorpdv",
+    "investimento",
+    "montante",
+];
+
+let editandoId = null; // agora guarda o id do documento Firestore
+let produtos = []; // array local cache
 
 function mostrarMensagem(msg) {
     mensagemSucesso.textContent = msg;
-    mensagemSucesso.classList.remove('hidden');
-    setTimeout(() => mensagemSucesso.classList.add('hidden'), 3000);
+    mensagemSucesso.classList.remove("hidden");
+    setTimeout(() => mensagemSucesso.classList.add("hidden"), 3000);
 }
 
 function limparFormulario() {
-    campos.forEach(campo => {
-        document.getElementById(campo).value = '';
+    campos.forEach((campo) => {
+        document.getElementById(campo).value = "";
     });
-    editandoIndex = -1;
-    cancelarEdicaoBtn.classList.add('hidden');
+    editandoId = null;
+    cancelarEdicaoBtn.classList.add("hidden");
 }
 
-function salvarProduto(event) {
+function calcularMontanteAutomaticamente() {
+    const embalagem = parseFloat(document.getElementById("embalagem").value) || 0;
+    const investimento =
+        parseFloat(document.getElementById("investimento").value) || 0;
+    const quantidade = parseFloat(document.getElementById("quantidade").value) || 0;
+
+    const montante = (embalagem + investimento);
+    document.getElementById("montante").value = montante.toFixed(2);
+}
+
+// Salvar ou atualizar produto no Firestore
+async function salvarProduto(event) {
     event.preventDefault();
 
-    const novoProduto = {};
+    let novoProduto = {};
     for (const campo of campos) {
         const input = document.getElementById(campo);
-        if (input.type === 'number') {
-            novoProduto[campo] = parseFloat(input.value);
+        if (
+            input.type === "number" &&
+            campo !== "nome" &&
+            campo !== "cor" &&
+            campo !== "montante"
+        ) {
+            novoProduto[campo] = parseFloat(input.value) || 0;
         } else {
             novoProduto[campo] = input.value.trim();
         }
     }
 
-    if (editandoIndex >= 0) {
-        produtos[editandoIndex] = novoProduto;
-        mostrarMensagem('Produto atualizado com sucesso!');
-    } else {
-        produtos.push(novoProduto);
-        mostrarMensagem('Produto salvo com sucesso!');
-    }
+    // Cálculo automático do montante (reforço)
+    novoProduto.montante =
+        (parseFloat(novoProduto.embalagem) + parseFloat(novoProduto.investimento)) *
+        parseFloat(novoProduto.quantidade);
 
-    limparFormulario();
-    atualizarTabela();
-    atualizarGrafico();
+    try {
+        if (editandoId) {
+            // Atualizar
+            const docRef = doc(db, "produtos", editandoId);
+            await updateDoc(docRef, novoProduto);
+            mostrarMensagem("Produto atualizado com sucesso!");
+        } else {
+            // Salvar novo
+            await addDoc(collection(db, "produtos"), novoProduto);
+            mostrarMensagem("Produto salvo com sucesso!");
+        }
+        limparFormulario();
+    } catch (error) {
+        alert("Erro ao salvar produto: " + error.message);
+    }
 }
+
+async function darBaixa(id, produtoAtual) {
+    const quantidadeSaida = prompt("Digite a quantidade a dar baixa:");
+    const qtd = parseInt(quantidadeSaida);
+
+    console.log("Produto atual recebido:", produtoAtual);
+    console.log("Quantidade digitada:", qtd);
+
+    if (!isNaN(qtd) && qtd > 0 && parseFloat(produtoAtual.quantidade) >= qtd) {
+        const novaQuantidade = parseFloat(produtoAtual.quantidade) - qtd;
+        console.log("Nova quantidade após baixa:", novaQuantidade);
+
+        try {
+            const docRef = doc(db, "produtos", id);
+            await updateDoc(docRef, {
+                quantidade: novaQuantidade
+            });
+
+            mostrarMensagem("Baixa realizada com sucesso!");
+            escutarProdutos();
+        } catch (error) {
+            console.error("Erro ao dar baixa:", error);
+            alert("Erro ao dar baixa no produto.");
+        }
+    } else {
+        alert("Quantidade inválida!");
+    }
+}
+
+
+
+// Excluir produto do Firestore
+async function excluirProduto(id) {
+    if (confirm("Deseja realmente excluir este produto?")) {
+        try {
+            await deleteDoc(doc(db, "produtos", id));
+            mostrarMensagem("Produto excluído com sucesso!");
+        } catch (error) {
+            alert("Erro ao excluir produto: " + error.message);
+        }
+    }
+}
+
+// Preenche formulário para editar
+function preencherFormulario(produto) {
+    editandoId = produto.id;
+    campos.forEach((campo) => {
+        document.getElementById(campo).value = produto[campo];
+    });
+    cancelarEdicaoBtn.classList.remove("hidden");
+    btnCadastro.click();
+}
+
+// Atualiza a tabela com dados do Firestore, com filtro e ordenação
+let ordemAtual = { coluna: null, crescente: true };
 
 function atualizarTabela() {
     const filtro = filtroBusca.value.toLowerCase();
-    let produtosFiltrados = produtos.filter(p => p.nome.toLowerCase().includes(filtro));
+
+    let produtosFiltrados = produtos.filter((p) =>
+        p.nome.toLowerCase().includes(filtro)
+    );
 
     if (ordemAtual.coluna) {
         produtosFiltrados.sort((a, b) => {
-            if (a[ordemAtual.coluna] < b[ordemAtual.coluna]) return ordemAtual.crescente ? -1 : 1;
-            if (a[ordemAtual.coluna] > b[ordemAtual.coluna]) return ordemAtual.crescente ? 1 : -1;
+            if (a[ordemAtual.coluna] < b[ordemAtual.coluna])
+                return ordemAtual.crescente ? -1 : 1;
+            if (a[ordemAtual.coluna] > b[ordemAtual.coluna])
+                return ordemAtual.crescente ? 1 : -1;
             return 0;
         });
     }
 
-    tabelaProdutos.innerHTML = '';
+    tabelaProdutos.innerHTML = "";
 
-    produtosFiltrados.forEach((produto, i) => {
-        const tr = document.createElement('tr');
-        tr.classList.add(i % 2 === 0 ? 'bg-white' : 'bg-orange-50');
+    produtosFiltrados.forEach((produto) => {
+        const tr = document.createElement("tr");
+        tr.classList.add(
+            produtosFiltrados.indexOf(produto) % 2 === 0 ? "bg-white" : "bg-orange-50"
+        );
         tr.innerHTML = `
       <td class="p-2 border border-orange-200">${produto.nome}</td>
       <td class="p-2 border border-orange-200">${produto.cor}</td>
@@ -91,96 +213,35 @@ function atualizarTabela() {
       <td class="p-2 border border-orange-200">
         <button class="editarBtn bg-yellow-300 px-2 py-1 rounded mr-2">Editar</button>
         <button class="excluirBtn bg-red-400 text-white px-2 py-1 rounded">Excluir</button>
+        <button class="darbaixaBtn bg-orange-400 text-white px-2 py-1 rounded">Baixa</button>
       </td>
     `;
+
         tabelaProdutos.appendChild(tr);
 
-        tr.querySelector('.editarBtn').addEventListener('click', () => editarProduto(produto));
-        tr.querySelector('.excluirBtn').addEventListener('click', () => excluirProduto(produto));
+        tr.querySelector(".editarBtn").addEventListener("click", () => {
+            preencherFormulario(produto);
+        });
+
+        tr.querySelector(".excluirBtn").addEventListener("click", () => {
+            excluirProduto(produto.id);
+        });
+
+        tr.querySelector('.darbaixaBtn').addEventListener('click', () => {
+            darBaixa(produto.id, produto);
+        });
+
     });
 }
 
-function editarProduto(produto) {
-    editandoIndex = produtos.indexOf(produto);
-    campos.forEach(campo => {
-        document.getElementById(campo).value = produto[campo];
-    });
-    cancelarEdicaoBtn.classList.remove('hidden');
-    btnCadastro.click();
-}
-
-function excluirProduto(produto) {
-    const index = produtos.indexOf(produto);
-    if (index >= 0) {
-        if (confirm(`Deseja realmente excluir o produto "${produto.nome}"?`)) {
-            produtos.splice(index, 1);
-            atualizarTabela();
-            atualizarGrafico();
-            mostrarMensagem('Produto excluído com sucesso!');
-        }
-    }
-}
-
-function cancelarEdicao() {
-    limparFormulario();
-}
-
-function configurarAbas() {
-    btnCadastro.addEventListener('click', () => {
-        mostrarAba('cadastro');
-    });
-    btnVisualizar.addEventListener('click', () => {
-        mostrarAba('visualizar');
-    });
-    btnGrafico.addEventListener('click', () => {
-        mostrarAba('grafico');
-    });
-}
-
-function mostrarAba(nomeAba) {
-    Object.keys(abas).forEach(aba => {
-        abas[aba].classList.toggle('hidden', aba !== nomeAba);
-    });
-
-    // Atualiza tabela ou gráfico ao mostrar
-    if (nomeAba === 'visualizar') {
-        atualizarTabela();
-    }
-    if (nomeAba === 'grafico') {
-        atualizarGrafico();
-    }
-}
-
-filtroBusca.addEventListener('input', atualizarTabela);
-formProduto.addEventListener('submit', salvarProduto);
-cancelarEdicaoBtn.addEventListener('click', cancelarEdicao);
-btnExportar.addEventListener('click', exportarParaExcel);
-
-configurarAbas();
-mostrarAba('cadastro');
-
-// Ordenação da tabela
-document.querySelectorAll('#abaVisualizar thead th.cursor-pointer').forEach(th => {
-    th.addEventListener('click', () => {
-        const coluna = th.dataset.col;
-        if (ordemAtual.coluna === coluna) {
-            ordemAtual.crescente = !ordemAtual.crescente;
-        } else {
-            ordemAtual.coluna = coluna;
-            ordemAtual.crescente = true;
-        }
-        atualizarTabela();
-    });
-});
-
-// Gráfico
+// Atualiza gráfico de lucro
 let chart;
 
 function atualizarGrafico() {
-    const ctx = document.getElementById('graficoLucro').getContext('2d');
+    const ctx = document.getElementById("graficoLucro").getContext("2d");
 
-    const labels = produtos.map(p => p.nome);
-    const lucroData = produtos.map(p => p.montante - p.investimento);
+    const labels = produtos.map((p) => p.nome);
+    const lucroData = produtos.map((p) => p.montante - p.investimento);
 
     if (chart) {
         chart.data.labels = labels;
@@ -188,25 +249,27 @@ function atualizarGrafico() {
         chart.update();
     } else {
         chart = new Chart(ctx, {
-            type: 'bar',
+            type: "bar",
             data: {
                 labels: labels,
-                datasets: [{
-                    label: 'Lucro (Montante - Investimento)',
-                    data: lucroData,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1,
-                }]
+                datasets: [
+                    {
+                        label: "Lucro (Montante - Investimento)",
+                        data: lucroData,
+                        backgroundColor: "rgba(75, 192, 192, 0.6)",
+                        borderColor: "rgba(75, 192, 192, 1)",
+                        borderWidth: 1,
+                    },
+                ],
             },
             options: {
                 responsive: true,
                 scales: {
                     y: {
-                        beginAtZero: true
-                    }
-                }
-            }
+                        beginAtZero: true,
+                    },
+                },
+            },
         });
     }
 }
@@ -214,31 +277,91 @@ function atualizarGrafico() {
 // Exportar para Excel (CSV simples)
 function exportarParaExcel() {
     if (produtos.length === 0) {
-        alert('Nenhum produto para exportar.');
+        alert("Nenhum produto para exportar.");
         return;
     }
 
-    const cabecalho = ['Nome', 'Cor', 'Quantidade', 'Embalagem (R$)', 'Valor PDV (R$)', 'Investimento (R$)', 'Montante (R$)'];
-    const linhas = produtos.map(p => [
+    const cabecalho = [
+        "Nome",
+        "Cor",
+        "Quantidade",
+        "Embalagem (R$)",
+        "Valor PDV (R$)",
+        "Investimento (R$)",
+        "Montante (R$)",
+    ];
+    const linhas = produtos.map((p) => [
         p.nome,
         p.cor,
         p.quantidade,
         p.embalagem.toFixed(2),
         p.valorpdv.toFixed(2),
         p.investimento.toFixed(2),
-        p.montante.toFixed(2)
+        p.montante.toFixed(2),
     ]);
 
-    let csvContent = cabecalho.join(';') + '\n' + linhas.map(l => l.join(';')).join('\n');
+    let csvContent = cabecalho.join(";") + "\n" + linhas.map((l) => l.join(";")).join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', 'estoque_carambola.csv');
+    link.setAttribute("download", "estoque_carambola.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 }
 
-atualizarTabela();
+function cancelarEdicao() {
+    limparFormulario();
+}
+
+function configurarAbas() {
+    btnCadastro.addEventListener("click", () => {
+        mostrarAba("cadastro");
+    });
+    btnVisualizar.addEventListener("click", () => {
+        mostrarAba("visualizar");
+    });
+    btnGrafico.addEventListener("click", () => {
+        mostrarAba("grafico");
+    });
+}
+
+function mostrarAba(nomeAba) {
+    Object.keys(abas).forEach((aba) => {
+        abas[aba].classList.toggle("hidden", aba !== nomeAba);
+    });
+
+    if (nomeAba === "visualizar") {
+        atualizarTabela();
+    }
+    if (nomeAba === "grafico") {
+        atualizarGrafico();
+    }
+}
+
+// Ouve alterações em tempo real no Firestore e atualiza array e interface
+function escutarProdutos() {
+    const q = query(collection(db, "produtos"), orderBy("nome", "asc"));
+    onSnapshot(q, (querySnapshot) => {
+        produtos = [];
+        querySnapshot.forEach((doc) => {
+            produtos.push({ id: doc.id, ...doc.data() });
+        });
+        atualizarTabela();
+        atualizarGrafico();
+    });
+}
+
+filtroBusca.addEventListener("input", atualizarTabela);
+formProduto.addEventListener("submit", salvarProduto);
+cancelarEdicaoBtn.addEventListener("click", cancelarEdicao);
+btnExportar.addEventListener("click", exportarParaExcel);
+["embalagem", "investimento", "quantidade"].forEach((id) => {
+    document.getElementById(id).addEventListener("input", calcularMontanteAutomaticamente);
+});
+
+configurarAbas();
+mostrarAba("cadastro");
+escutarProdutos();
 
