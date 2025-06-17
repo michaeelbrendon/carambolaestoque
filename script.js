@@ -76,7 +76,6 @@ function calcularMontanteAutomaticamente() {
     const embalagem = parseFloat(document.getElementById("embalagem").value) || 0;
     const investimento =
         parseFloat(document.getElementById("investimento").value) || 0;
-    const quantidade = parseFloat(document.getElementById("quantidade").value) || 0;
 
     const montante = (embalagem + investimento);
     document.getElementById("montante").value = montante.toFixed(2);
