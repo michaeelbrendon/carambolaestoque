@@ -34,7 +34,7 @@
             <div id="mensagemSucesso"
                 class="hidden fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow"></div>
 
-            <div id="abaCadastro" class="tab-content">
+            <div id="abaCadastro" class="tab-content hidden">
                 <form id="formProduto" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <input id="nome" type="text" placeholder="Nome do produto"
                         class="p-2 border border-orange-300 rounded" required />
@@ -59,32 +59,34 @@
                 </form>
             </div>
 
-            <div id="abaVisualizar" class="tab-content hidden">
+            <div id="abaVisualizar" class="tab-content">
                 <input type="text" id="filtroBusca" placeholder="Buscar produto por nome"
                     class="mb-4 p-2 border border-orange-300 rounded w-full" />
-                <div class="overflow-auto rounded">
-                    <table class="w-full text-left border border-orange-300">
+
+                <div class="overflow-auto rounded shadow-lg border border-orange-300 bg-white">
+                    <table class="w-full text-left">
                         <thead>
-                            <tr class="bg-orange-100">
-                                <th class="p-2 border border-orange-200 cursor-pointer" data-col="nome">Nome</th>
-                                <th class="p-2 border border-orange-200 cursor-pointer" data-col="cor">Cor</th>
-                                <th class="p-2 border border-orange-200 cursor-pointer" data-col="quantidade">Quantidade
-                                </th>
-                                <th class="p-2 border border-orange-200 cursor-pointer" data-col="embalagem">Embalagem
+                            <tr class="bg-orange-100 text-orange-800">
+                                <th class="p-2 border-b border-orange-200 cursor-pointer" data-col="nome">Nome</th>
+                                <th class="p-2 border-b border-orange-200 cursor-pointer" data-col="cor">Cor</th>
+                                <th class="p-2 border-b border-orange-200 cursor-pointer" data-col="quantidade">
+                                    Quantidade</th>
+                                <th class="p-2 border-b border-orange-200 cursor-pointer" data-col="embalagem">Embalagem
                                     (R$)</th>
-                                <th class="p-2 border border-orange-200 cursor-pointer" data-col="valorpdv">Valorpdv
+                                <th class="p-2 border-b border-orange-200 cursor-pointer" data-col="valorpdv">Valorpdv
                                     (R$)</th>
-                                <th class="p-2 border border-orange-200 cursor-pointer" data-col="investimento">
+                                <th class="p-2 border-b border-orange-200 cursor-pointer" data-col="investimento">
                                     Investimento (R$)</th>
-                                <th class="p-2 border border-orange-200 cursor-pointer" data-col="montante">Montante
+                                <th class="p-2 border-b border-orange-200 cursor-pointer" data-col="montante">Montante
                                     (R$)</th>
-                                <th class="p-2 border border-orange-200">Ações</th>
+                                <th class="p-2 border-b border-orange-200">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaProdutos"></tbody>
                     </table>
                 </div>
             </div>
+
 
             <div id="abaGrafico" class="tab-content hidden">
                 <canvas id="graficoLucro" class="w-full max-w-4xl mx-auto h-96"></canvas>
