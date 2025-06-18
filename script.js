@@ -76,6 +76,7 @@ function calcularMontanteAutomaticamente() {
     const embalagem = parseFloat(document.getElementById("embalagem").value) || 0;
     const investimento =
         parseFloat(document.getElementById("investimento").value) || 0;
+    const quantidade = parseFloat(document.getElementById("quantidade").value) || 0;
 
     const montante = (embalagem + investimento);
     document.getElementById("montante").value = montante.toFixed(2);
@@ -328,16 +329,24 @@ function configurarAbas() {
 
 function mostrarAba(nomeAba) {
     Object.keys(abas).forEach((aba) => {
+        // Mostra/esconde a aba
         abas[aba].classList.toggle("hidden", aba !== nomeAba);
     });
 
-    if (nomeAba === "visualizar") {
-        atualizarTabela();
-    }
-    if (nomeAba === "grafico") {
-        atualizarGrafico();
-    }
+    // Remove destaque de todos os botões
+    [btnCadastro, btnVisualizar, btnGrafico].forEach((btn) =>
+        btn.classList.remove("aba-ativa")
+    );
+
+    // Aplica destaque no botão correspondente
+    if (nomeAba === "cadastro") btnCadastro.classList.add("aba-ativa");
+    if (nomeAba === "visualizar") btnVisualizar.classList.add("aba-ativa");
+    if (nomeAba === "grafico") btnGrafico.classList.add("aba-ativa");
+
+    if (nomeAba === "visualizar") atualizarTabela();
+    if (nomeAba === "grafico") atualizarGrafico();
 }
+
 
 // Ouve alterações em tempo real no Firestore e atualiza array e interface
 function escutarProdutos() {
@@ -352,6 +361,22 @@ function escutarProdutos() {
     });
 }
 
+// Filtro de busca em tempo real
+document.getElementById("filtroBusca").addEventListener("input", function () {
+    const termoBusca = this.value.toLowerCase();
+    const linhas = document.querySelectorAll("#tabelaProdutos tr");
+
+    linhas.forEach((linha) => {
+        const nomeProduto = linha.querySelector("td")?.textContent?.toLowerCase() || "";
+        if (nomeProduto.includes(termoBusca)) {
+            linha.style.display = "";
+        } else {
+            linha.style.display = "none";
+        }
+    });
+});
+
+
 filtroBusca.addEventListener("input", atualizarTabela);
 formProduto.addEventListener("submit", salvarProduto);
 cancelarEdicaoBtn.addEventListener("click", cancelarEdicao);
@@ -361,6 +386,5 @@ btnExportar.addEventListener("click", exportarParaExcel);
 });
 
 configurarAbas();
-mostrarAba("cadastro");
+mostrarAba("visualizar");
 escutarProdutos();
-
