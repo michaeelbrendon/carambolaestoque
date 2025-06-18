@@ -43,3 +43,9 @@ table tr:nth-child(even) {
 table tr:hover {
     background-color: #fef3c7;
 }
+
+.aba-ativa {
+  background-color: #f97316; /* laranja forte */
+  color: white;
+  font-weight: bold;
+}
