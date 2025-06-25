@@ -1,5 +1,3 @@
-// script.js
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import {
     getFirestore,
@@ -14,7 +12,6 @@ import {
     orderBy,
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-// Configuração Firebase - substitua pelos seus dados reais do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyDtKKeamDkDcT_0bGp79PNnZ1k_ThaCyhk",
     authDomain: "estoquecarambola2.firebaseapp.com",
@@ -55,8 +52,8 @@ const campos = [
     "montante",
 ];
 
-let editandoId = null; // agora guarda o id do documento Firestore
-let produtos = []; // array local cache
+let editandoId = null; 
+let produtos = []; 
 
 function mostrarMensagem(msg) {
     mensagemSucesso.textContent = msg;
@@ -82,7 +79,7 @@ function calcularMontanteAutomaticamente() {
     document.getElementById("montante").value = montante.toFixed(2);
 }
 
-// Salvar ou atualizar produto no Firestore
+
 async function salvarProduto(event) {
     event.preventDefault();
 
@@ -101,19 +98,19 @@ async function salvarProduto(event) {
         }
     }
 
-    // Cálculo automático do montante (reforço)
+
     novoProduto.montante =
         (parseFloat(novoProduto.embalagem) + parseFloat(novoProduto.investimento)) *
         parseFloat(novoProduto.quantidade);
 
     try {
         if (editandoId) {
-            // Atualizar
+            
             const docRef = doc(db, "produtos", editandoId);
             await updateDoc(docRef, novoProduto);
             mostrarMensagem("Produto atualizado com sucesso!");
         } else {
-            // Salvar novo
+            
             await addDoc(collection(db, "produtos"), novoProduto);
             mostrarMensagem("Produto salvo com sucesso!");
         }
@@ -151,9 +148,6 @@ async function darBaixa(id, produtoAtual) {
     }
 }
 
-
-
-// Excluir produto do Firestore
 async function excluirProduto(id) {
     if (confirm("Deseja realmente excluir este produto?")) {
         try {
@@ -165,7 +159,6 @@ async function excluirProduto(id) {
     }
 }
 
-// Preenche formulário para editar
 function preencherFormulario(produto) {
     editandoId = produto.id;
     campos.forEach((campo) => {
@@ -175,7 +168,6 @@ function preencherFormulario(produto) {
     btnCadastro.click();
 }
 
-// Atualiza a tabela com dados do Firestore, com filtro e ordenação
 let ordemAtual = { coluna: null, crescente: true };
 
 function atualizarTabela() {
@@ -234,7 +226,7 @@ function atualizarTabela() {
     });
 }
 
-// Atualiza gráfico de lucro
+
 let chart;
 
 function atualizarGrafico() {
@@ -274,7 +266,6 @@ function atualizarGrafico() {
     }
 }
 
-// Exportar para Excel (CSV simples)
 function exportarParaExcel() {
     if (produtos.length === 0) {
         alert("Nenhum produto para exportar.");
@@ -329,16 +320,16 @@ function configurarAbas() {
 
 function mostrarAba(nomeAba) {
     Object.keys(abas).forEach((aba) => {
-        // Mostra/esconde a aba
+        
         abas[aba].classList.toggle("hidden", aba !== nomeAba);
     });
 
-    // Remove destaque de todos os botões
+    
     [btnCadastro, btnVisualizar, btnGrafico].forEach((btn) =>
         btn.classList.remove("aba-ativa")
     );
 
-    // Aplica destaque no botão correspondente
+    
     if (nomeAba === "cadastro") btnCadastro.classList.add("aba-ativa");
     if (nomeAba === "visualizar") btnVisualizar.classList.add("aba-ativa");
     if (nomeAba === "grafico") btnGrafico.classList.add("aba-ativa");
@@ -348,7 +339,6 @@ function mostrarAba(nomeAba) {
 }
 
 
-// Ouve alterações em tempo real no Firestore e atualiza array e interface
 function escutarProdutos() {
     const q = query(collection(db, "produtos"), orderBy("nome", "asc"));
     onSnapshot(q, (querySnapshot) => {
@@ -361,7 +351,6 @@ function escutarProdutos() {
     });
 }
 
-// Filtro de busca em tempo real
 document.getElementById("filtroBusca").addEventListener("input", function () {
     const termoBusca = this.value.toLowerCase();
     const linhas = document.querySelectorAll("#tabelaProdutos tr");
